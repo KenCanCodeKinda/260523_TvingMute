@@ -1,91 +1,40 @@
 (() => {
   'use strict';
 
-  // ---------------------------------------------------------------------------
-  // Ad detection markers
-  //
-  // These selectors / text patterns are the heuristics for "is an ad playing?"
-  // Refine after observing a live ad break in DevTools (Phase 0). The detector
-  // returns true if ANY of these signals fire — keep this list narrow enough
-  // that false positives don't mute the game itself.
-  // ---------------------------------------------------------------------------
-  const AD_TEXT_PATTERNS = [
-    /광고/,             // Korean for "advertisement"
-    /\bAD\b/,           // common English ad badge
-    /Advertisement/i,
-  ];
-
-  // CSS selectors that, if present and visible, indicate an ad overlay.
-  // Refine after Phase 0. Vague class names like ".ad" are intentionally avoided
-  // because they hit too many false positives in modern bundlers.
-  const AD_ELEMENT_SELECTORS = [
-    '[class*="adContainer" i]',
-    '[class*="ad-container" i]',
-    '[class*="adOverlay" i]',
-    '[data-ad="true"]',
-    '[data-testid*="ad" i]',
-  ];
-
-  const PLAYER_CONTAINER_SELECTORS = [
-    '[class*="player" i]',
-    '[id*="player" i]',
-    '#vlive-player',
-  ];
+  // The TVING player renders a top-right "광고 정보 더 보기" button only
+  // during ad breaks. Presence of this button is the ad signal; absence
+  // means the broadcast is playing.
+  const AD_MARKER_TEXT = '광고 정보 더 보기';
 
   const DEBOUNCE_MS = 100;
   const VIDEO_POLL_MS = 500;
   const VIDEO_POLL_TIMEOUT_MS = 30000;
 
-  // ---------------------------------------------------------------------------
-  // State
-  // ---------------------------------------------------------------------------
   const state = {
     enabled: true,
     isAd: false,
-    prevMuted: null,         // volume state when ad started; null between ads
+    prevMuted: null,
     video: null,
-    container: null,
     observer: null,
     debounceTimer: null,
   };
 
   // ---------------------------------------------------------------------------
   // Detection
-  //
-  // We only match ad text when it appears inside a SMALL LEAF element — i.e.
-  // a node with no element children and short text content. The TVING player
-  // chrome contains "광고" in settings/menus/legal copy, so a naive scan of the
-  // container's innerText perma-mutes the game. A real ad badge is almost
-  // always a tiny standalone label or counter ("광고", "광고 1/3", "AD 00:15").
   // ---------------------------------------------------------------------------
-  const MAX_AD_LABEL_LENGTH = 24;
-
-  function detectAd(root) {
-    if (!root) return false;
-
-    for (const sel of AD_ELEMENT_SELECTORS) {
-      const el = root.querySelector(sel);
-      if (el && isVisible(el)) return true;
-    }
-
-    return findAdTextLeaf(root) !== null;
+  function normalize(text) {
+    return (text || '').replace(/\s+/g, ' ').trim();
   }
 
-  function findAdTextLeaf(root) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null);
-    let node = walker.nextNode();
-    while (node) {
-      if (node.childElementCount === 0) {
-        const text = (node.textContent || '').trim();
-        if (text && text.length <= MAX_AD_LABEL_LENGTH) {
-          for (const pattern of AD_TEXT_PATTERNS) {
-            if (pattern.test(text) && isVisible(node)) return node;
-          }
-        }
+  function isAdNow() {
+    const candidates = document.querySelectorAll('button, a, span');
+    for (const el of candidates) {
+      if (el.childElementCount > 0) continue;
+      if (normalize(el.textContent).includes(AD_MARKER_TEXT) && isVisible(el)) {
+        return true;
       }
-      node = walker.nextNode();
     }
-    return null;
+    return false;
   }
 
   function isVisible(el) {
@@ -121,8 +70,7 @@
   }
 
   function evaluate() {
-    if (!state.container) return;
-    const nowAd = detectAd(state.container);
+    const nowAd = isAdNow();
     if (nowAd === state.isAd) return;
     state.isAd = nowAd;
     if (nowAd) onAdStart();
@@ -140,37 +88,22 @@
   // ---------------------------------------------------------------------------
   // Setup
   // ---------------------------------------------------------------------------
-  function findVideo() {
-    return document.querySelector('video');
-  }
-
-  function findPlayerContainer(video) {
-    for (const sel of PLAYER_CONTAINER_SELECTORS) {
-      const el = video.closest(sel) || document.querySelector(sel);
-      if (el) return el;
-    }
-    return video.parentElement || document.body;
-  }
-
   function attachObserver() {
     if (state.observer) state.observer.disconnect();
     state.observer = new MutationObserver(scheduleEvaluate);
-    state.observer.observe(state.container, {
+    state.observer.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: true,
-      characterData: true,
     });
     evaluate();
   }
 
   function waitForVideo(deadline = Date.now() + VIDEO_POLL_TIMEOUT_MS) {
-    const v = findVideo();
+    const v = document.querySelector('video');
     if (v) {
       state.video = v;
-      state.container = findPlayerContainer(v);
       attachObserver();
-      log('초기화 완료. video 요소:', v, '컨테이너:', state.container);
+      log('초기화 완료. video 요소:', v);
       return;
     }
     if (Date.now() > deadline) {
@@ -208,17 +141,13 @@
   });
 
   // ---------------------------------------------------------------------------
-  // Debug
+  // Debug — toggle in DevTools console: window.__TVING_MUTE_DEBUG = true
   // ---------------------------------------------------------------------------
   function log(...args) {
     if (window.__TVING_MUTE_DEBUG) console.log('[TVING-Mute]', ...args);
   }
-  // Toggle in DevTools console: window.__TVING_MUTE_DEBUG = true
   window.__TVING_MUTE_DEBUG = window.__TVING_MUTE_DEBUG || false;
 
-  // ---------------------------------------------------------------------------
-  // Go
-  // ---------------------------------------------------------------------------
   loadSettings();
   waitForVideo();
 })();

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "TVING Sports Ad Muter",
+  "name": "TVING 스포츠 광고 음소거",
   "version": "0.1.0",
-  "description": "Auto-mutes the TVING sports broadcast player during ad breaks and restores prior volume when the game resumes.",
+  "description": "TVING 스포츠 중계 중 광고가 나올 때 자동으로 음소거하고, 경기가 다시 시작되면 원래 음소거 상태로 되돌립니다.",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://www.tving.com/*"],
   "content_scripts": [
@@ -15,7 +15,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "TVING Sports Ad Muter",
+    "default_title": "TVING 스포츠 광고 음소거",
     "default_icon": {
       "16": "icons/16.png",
       "48": "icons/48.png",

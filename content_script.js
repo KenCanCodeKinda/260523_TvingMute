@@ -104,7 +104,7 @@
     if (!state.video || !state.enabled) return;
     state.prevMuted = state.video.muted;
     state.video.muted = true;
-    log('Ad detected — muted (prior muted state:', state.prevMuted, ')');
+    log('광고 감지 — 음소거 (이전 음소거 상태:', state.prevMuted, ')');
   }
 
   function onAdEnd() {
@@ -115,7 +115,7 @@
     }
     if (state.prevMuted !== null) {
       state.video.muted = state.prevMuted;
-      log('Ad ended — restored muted state to', state.prevMuted);
+      log('광고 종료 — 음소거 상태 복원:', state.prevMuted);
     }
     state.prevMuted = null;
   }
@@ -170,11 +170,11 @@
       state.video = v;
       state.container = findPlayerContainer(v);
       attachObserver();
-      log('Initialized on video element', v, 'container', state.container);
+      log('초기화 완료. video 요소:', v, '컨테이너:', state.container);
       return;
     }
     if (Date.now() > deadline) {
-      log('Gave up waiting for <video> element after', VIDEO_POLL_TIMEOUT_MS, 'ms');
+      log('<video> 요소를 찾지 못해 대기 중단 (', VIDEO_POLL_TIMEOUT_MS, 'ms 경과)');
       return;
     }
     setTimeout(() => waitForVideo(deadline), VIDEO_POLL_MS);
@@ -190,7 +190,7 @@
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'sync' || !changes.enabled) return;
       state.enabled = !!changes.enabled.newValue;
-      log('Enabled flag now', state.enabled);
+      log('사용 설정 변경됨:', state.enabled);
       if (!state.enabled) state.prevMuted = null;
     });
   }

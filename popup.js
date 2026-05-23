@@ -21,24 +21,24 @@
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs[0];
     if (!tab || !tab.url || !/^https:\/\/www\.tving\.com\/contents\/sports\/.+\/broadcast/.test(tab.url)) {
-      setStatus('Idle (not a broadcast page)', 'idle');
+      setStatus('대기 중 (중계 페이지 아님)', 'idle');
       return;
     }
     chrome.tabs.sendMessage(tab.id, { type: 'getStatus' }, (resp) => {
       if (chrome.runtime.lastError || !resp || !resp.ok) {
-        setStatus('Idle (content script not loaded — reload tab)', 'idle');
+        setStatus('대기 중 (탭을 새로고침해 주세요)', 'idle');
         return;
       }
       if (!resp.hasVideo) {
-        setStatus('Waiting for player…', 'idle');
+        setStatus('플레이어 대기 중…', 'idle');
         return;
       }
       if (!resp.enabled) {
-        setStatus('Disabled', 'idle');
+        setStatus('사용 꺼짐', 'idle');
         return;
       }
-      if (resp.isAd) setStatus('Ad detected — muted', 'ad');
-      else setStatus('Playing', 'playing');
+      if (resp.isAd) setStatus('광고 감지 — 음소거됨', 'ad');
+      else setStatus('재생 중', 'playing');
     });
   });
 })();

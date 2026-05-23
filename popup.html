@@ -3,68 +3,342 @@
   <head>
     <meta charset="utf-8" />
     <title>TVING 스포츠 광고 음소거</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      :root { color-scheme: light dark; }
+      :root {
+        --bg-color: #090B11;
+        --card-bg: rgba(255, 255, 255, 0.03);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --text-primary: #FFFFFF;
+        --text-secondary: #9CA3AF;
+        --tving-red: #FF1E42;
+        --tving-red-glow: rgba(255, 30, 66, 0.4);
+        
+        --color-ad: #EF4444;
+        --color-ad-glow: rgba(239, 68, 68, 0.3);
+        --color-playing: #10B981;
+        --color-playing-glow: rgba(16, 185, 129, 0.3);
+        --color-idle: #6B7280;
+        --color-idle-glow: rgba(107, 114, 128, 0.2);
+      }
+
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-primary);
         margin: 0;
-        padding: 14px 16px;
-        width: 260px;
-        font-size: 13px;
+        padding: 20px;
+        width: 280px;
+        box-sizing: border-box;
+        overflow: hidden;
       }
-      h1 {
-        font-size: 13px;
+
+      /* Glow background effect */
+      .bg-glow {
+        position: absolute;
+        top: -60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(circle, var(--tving-red-glow) 0%, rgba(9, 11, 17, 0) 70%);
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      /* Title section */
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #FF1E42 0%, #D60024 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 16px;
+        color: white;
+        box-shadow: 0 4px 12px var(--tving-red-glow);
+      }
+
+      .logo-text {
+        font-family: 'Outfit', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        background: linear-gradient(to right, #FFF, #E5E7EB);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .logo-badge {
+        font-size: 9px;
         font-weight: 600;
-        margin: 0 0 10px 0;
+        background: rgba(255, 30, 66, 0.15);
+        color: var(--tving-red);
+        padding: 2px 6px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 30, 66, 0.3);
       }
+
+      /* Premium Card Container */
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 16px;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        margin-bottom: 12px;
+      }
+
       .row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin: 6px 0;
       }
-      .status {
-        margin-top: 10px;
-        padding: 8px 10px;
-        border-radius: 6px;
-        background: rgba(127, 127, 127, 0.12);
-        font-size: 12px;
-      }
-      .status .label { opacity: 0.6; }
-      .status .value { font-weight: 600; margin-left: 6px; }
-      .value.ad { color: #d97706; }
-      .value.playing { color: #16a34a; }
-      .value.idle { color: #6b7280; }
 
-      /* Toggle */
-      .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
-      .switch input { opacity: 0; width: 0; height: 0; }
+      .label-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .label-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #F3F4F6;
+      }
+
+      .label-desc {
+        font-size: 10.5px;
+        color: var(--text-secondary);
+      }
+
+      /* Premium Switch */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
       .slider {
-        position: absolute; inset: 0; cursor: pointer;
-        background: #9ca3af; border-radius: 20px; transition: 0.15s;
+        position: absolute;
+        inset: 0;
+        cursor: pointer;
+        background: #374151;
+        border-radius: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
+
       .slider::before {
-        content: ""; position: absolute; height: 16px; width: 16px;
-        left: 2px; bottom: 2px; background: white; border-radius: 50%;
-        transition: 0.15s;
+        content: "";
+        position: absolute;
+        height: 18px;
+        width: 18px;
+        left: 2px;
+        bottom: 2px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       }
-      input:checked + .slider { background: #16a34a; }
-      input:checked + .slider::before { transform: translateX(16px); }
+
+      input:checked + .slider {
+        background: var(--tving-red);
+        box-shadow: 0 0 12px rgba(255, 30, 66, 0.4);
+      }
+
+      input:checked + .slider::before {
+        transform: translateX(20px);
+      }
+
+      /* Status Dashboard */
+      .status-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 10px;
+        gap: 12px;
+        position: relative;
+      }
+
+      /* Pulse Ring Animation */
+      .status-indicator {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        transition: all 0.4s ease;
+      }
+
+      .status-indicator::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        z-index: -1;
+        animation: pulse-ring 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        transition: all 0.4s ease;
+      }
+
+      /* Status Icons inside pulse */
+      .status-icon {
+        font-size: 20px;
+        line-height: 1;
+        transition: all 0.4s ease;
+      }
+
+      /* State styles */
+      .status-indicator.idle {
+        background: rgba(107, 114, 128, 0.15);
+        border: 1px solid rgba(107, 114, 128, 0.3);
+      }
+      .status-indicator.idle::before {
+        background: var(--color-idle-glow);
+      }
+      .status-indicator.idle .status-icon { color: var(--color-idle); }
+
+      .status-indicator.playing {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .status-indicator.playing::before {
+        background: var(--color-playing-glow);
+      }
+      .status-indicator.playing .status-icon { color: var(--color-playing); }
+
+      .status-indicator.ad {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        animation: alert-shake 0.5s ease;
+      }
+      .status-indicator.ad::before {
+        background: var(--color-ad-glow);
+      }
+      .status-indicator.ad .status-icon { color: var(--color-ad); }
+
+      /* Glowing Badge Value */
+      .status-badge {
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        padding: 5px 12px;
+        border-radius: 30px;
+        transition: all 0.4s ease;
+        text-align: center;
+        width: 80%;
+      }
+
+      .status-badge.idle {
+        background: rgba(107, 114, 128, 0.1);
+        color: #9CA3AF;
+        border: 1px solid rgba(107, 114, 128, 0.2);
+      }
+
+      .status-badge.playing {
+        background: rgba(16, 185, 129, 0.1);
+        color: #34D399;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        box-shadow: inset 0 0 8px rgba(16, 185, 129, 0.05);
+      }
+
+      .status-badge.ad {
+        background: rgba(239, 68, 68, 0.12);
+        color: #F87171;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+      }
+
+      /* Micro Info Box */
+      .info-box {
+        font-size: 10.5px;
+        color: var(--text-secondary);
+        text-align: center;
+        line-height: 1.4;
+        opacity: 0.7;
+        margin-top: 4px;
+      }
+
+      /* Animations */
+      @keyframes pulse-ring {
+        0% { transform: scale(0.95); opacity: 0.9; }
+        100% { transform: scale(1.6); opacity: 0; }
+      }
+
+      @keyframes alert-shake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-4px); }
+        40%, 80% { transform: translateX(4px); }
+      }
     </style>
   </head>
   <body>
-    <h1>TVING 스포츠 광고 음소거</h1>
-    <div class="row">
-      <span>사용</span>
-      <label class="switch">
-        <input type="checkbox" id="enabled" />
-        <span class="slider"></span>
-      </label>
+    <div class="bg-glow"></div>
+    
+    <div class="header">
+      <div class="logo-icon">T</div>
+      <div class="logo-text">TVING MUTE</div>
+      <div class="logo-badge">Sports</div>
     </div>
-    <div class="status">
-      <span class="label">상태:</span>
-      <span class="value idle" id="status">…</span>
+
+    <!-- Switch Card -->
+    <div class="card">
+      <div class="row">
+        <div class="label-group">
+          <span class="label-title">자동 광고 음소거</span>
+          <span class="label-desc">광고 중 자동 음소거 활성화</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
+
+    <!-- Status Card -->
+    <div class="card">
+      <div class="status-panel">
+        <!-- Visual status indicator dot/ring -->
+        <div id="indicator" class="status-indicator idle">
+          <span id="indicator-icon" class="status-icon">⚪</span>
+        </div>
+        
+        <!-- Text badge (the target status element for popup.js) -->
+        <span class="status-badge idle" id="status">…</span>
+      </div>
+    </div>
+
+    <div class="info-box">
+      티빙 스포츠/KBO 중계 화면에서 자동으로 작동합니다.<br>
+      소리가 꺼지지 않을 경우 페이지를 새로고침 해보세요.
+    </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

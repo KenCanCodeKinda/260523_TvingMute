@@ -1,6 +1,11 @@
 (() => {
   'use strict';
 
+  // 이미 주입된 페이지에서는 재실행 안 함. SPA 라우팅 후 background.js 가
+  // 다시 주입하더라도 옵저버/리스너가 중복 등록되지 않도록 한다.
+  if (window.__TVING_MUTE_LOADED) return;
+  window.__TVING_MUTE_LOADED = true;
+
   // The TVING player renders a top-right "광고 정보 더 보기" button only
   // during ad breaks. Presence of this button is the ad signal; absence
   // means the broadcast is playing.
@@ -70,6 +75,13 @@
   }
 
   function evaluate() {
+    // SPA 라우팅으로 <video> 가 갈렸을 수도 있어서 매번 다시 확인.
+    const currentVideo = document.querySelector('video');
+    if (currentVideo && currentVideo !== state.video) {
+      state.video = currentVideo;
+      state.prevMuted = null;
+    }
+
     const nowAd = isAdNow();
     if (nowAd === state.isAd) return;
     state.isAd = nowAd;

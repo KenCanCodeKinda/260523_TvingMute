@@ -1,14 +1,29 @@
 {
   "manifest_version": 3,
   "name": "TVING 스포츠 광고 음소거",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TVING 스포츠 중계 중 광고가 나올 때 자동으로 음소거하고, 경기가 다시 시작되면 원래 음소거 상태로 되돌립니다.",
-  "permissions": ["storage", "activeTab"],
-  "host_permissions": ["https://www.tving.com/*"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "https://www.tving.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://www.tving.com/contents/sports/*/broadcast*"],
-      "js": ["content_script.js"],
+      "matches": [
+        "https://www.tving.com/contents/sports/*/broadcast*",
+        "https://www.tving.com/contents/kbo/*/broadcast*"
+      ],
+      "js": [
+        "content_script.js"
+      ],
       "run_at": "document_idle",
       "all_frames": true
     }

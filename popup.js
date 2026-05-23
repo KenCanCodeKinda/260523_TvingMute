@@ -3,11 +3,24 @@
 
   const enabledInput = document.getElementById('enabled');
   const statusEl = document.getElementById('status');
+  const indicatorEl = document.getElementById('indicator');
+  const indicatorIconEl = document.getElementById('indicator-icon');
 
   function setStatus(text, klass) {
     statusEl.textContent = text;
-    statusEl.classList.remove('ad', 'playing', 'idle');
-    statusEl.classList.add(klass);
+    statusEl.className = 'status-badge ' + klass;
+    
+    if (indicatorEl) {
+      indicatorEl.className = 'status-indicator ' + klass;
+    }
+    
+    if (indicatorIconEl) {
+      let icon = '⚪';
+      if (klass === 'ad') icon = '🔇';
+      else if (klass === 'playing') icon = '🔊';
+      else if (klass === 'idle') icon = '💤';
+      indicatorIconEl.textContent = icon;
+    }
   }
 
   chrome.storage.sync.get({ enabled: true }, (cfg) => {
@@ -20,7 +33,7 @@
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs[0];
-    if (!tab || !tab.url || !/^https:\/\/www\.tving\.com\/contents\/sports\/.+\/broadcast/.test(tab.url)) {
+    if (!tab || !tab.url || !/^https:\/\/www\.tving\.com\/contents\/(sports|kbo)\/.+\/broadcast/.test(tab.url)) {
       setStatus('대기 중 (중계 페이지 아님)', 'idle');
       return;
     }

@@ -89,7 +89,7 @@ Chrome 도구 모음의 **T 아이콘**을 누르면 작은 창이 뜹니다.
 
 ## 어디서 작동하나요
 
-`https://www.tving.com/contents/sports/.../broadcast?...` 또는 `https://www.tving.com/contents/kbo/.../broadcast?...` 처럼 생긴 **TVING 스포츠 및 KBO 야구 중계 페이지**에서만 작동합니다.
+`https://www.tving.com/contents/sports/...` 또는 `https://www.tving.com/contents/kbo/...` 경로의 **TVING 스포츠 및 KBO 야구 중계 페이지**에서 작동합니다. (라이브 스트리밍 경로는 `/power` 처럼 TVING 이 수시로 바꾸므로 스포츠·KBO 콘텐츠 경로 전체를 대상으로 합니다.)
 
 TVING 의 다른 페이지(메인, 드라마, 예능 등)에서는 아무 일도 하지 않으니 안심하세요.
 

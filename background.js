@@ -3,7 +3,11 @@
 // 일어나지 않아 정적 content_scripts 가 주입되지 않는다. webNavigation API 의
 // history state 이벤트로 SPA 전환을 감지해서 직접 주입한다.
 
-const BROADCAST_URL_RE = /^https:\/\/www\.tving\.com\/contents\/(sports|kbo)\/[^/]+\/broadcast/;
+// TVING 중계/스포츠 콘텐츠 페이지. 라이브 스트리밍 경로는 한때 `/broadcast` 였다가
+// 현재는 `/power` 로 바뀌었으므로(예: contents/sports/20260529HTLG02026/power),
+// 특정 하위 경로에 묶지 않고 sports/kbo 콘텐츠 경로 전체를 대상으로 한다. content
+// script 는 영상/광고가 없는 페이지에서는 아무 일도 하지 않으므로 넓게 잡아도 안전하다.
+const BROADCAST_URL_RE = /^https:\/\/www\.tving\.com\/contents\/(sports|kbo)\//;
 
 function injectIfBroadcast(details) {
   if (details.frameId !== 0) return;

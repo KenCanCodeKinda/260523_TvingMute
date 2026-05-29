@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TVING 스포츠 광고 음소거",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "TVING 스포츠 중계 중 광고가 나올 때 자동으로 음소거하고 경기가 다시 시작되면 음소거를 해제하며, 플레이어 아래 배너 광고도 숨깁니다.",
   "permissions": [
     "storage",
@@ -19,8 +19,8 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.tving.com/contents/sports/*/broadcast*",
-        "https://www.tving.com/contents/kbo/*/broadcast*"
+        "https://www.tving.com/contents/sports/*",
+        "https://www.tving.com/contents/kbo/*"
       ],
       "js": [
         "content_script.js"

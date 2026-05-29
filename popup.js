@@ -39,7 +39,7 @@
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs[0];
-    if (!tab || !tab.url || !/^https:\/\/www\.tving\.com\/contents\/(sports|kbo)\/.+\/broadcast/.test(tab.url)) {
+    if (!tab || !tab.url || !/^https:\/\/www\.tving\.com\/contents\/(sports|kbo)\//.test(tab.url)) {
       setStatus('대기 중 (중계 페이지 아님)', 'idle');
       return;
     }
@@ -48,8 +48,10 @@
         setStatus('대기 중 (탭을 새로고침해 주세요)', 'idle');
         return;
       }
+      // 영상이 아직 없어도(예: "라이브 예정") 배너 광고 숨김은 이미 동작 중이다.
       if (!resp.hasVideo) {
-        setStatus('플레이어 대기 중…', 'idle');
+        if (resp.hideAds) setStatus('배너 광고 숨김 적용 중 (영상 대기)', 'playing');
+        else setStatus('플레이어 대기 중…', 'idle');
         return;
       }
       if (!resp.enabled) {

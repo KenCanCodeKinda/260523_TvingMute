@@ -185,6 +185,7 @@
         ok: true,
         isAd: state.isAd,
         enabled: state.enabled,
+        hideAds: state.hideAds,
         hasVideo: !!state.video,
       });
       return true;

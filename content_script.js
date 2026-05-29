@@ -11,12 +11,18 @@
   // means the broadcast is playing.
   const AD_MARKER_TEXT = '광고 정보 더 보기';
 
+  // 플레이어 아래에 붙는 디스플레이 배너 광고. TVING 이 SPA 재렌더링으로 다시
+  // 끼워 넣어도 항상 가려지도록, 엘리먼트를 지우는 대신 <style> 로 숨긴다.
+  const AD_BANNER_SELECTOR = '.display-ad-item-wrapper';
+  const HIDE_STYLE_ID = '__tving_mute_hide_ads';
+
   const DEBOUNCE_MS = 100;
   const VIDEO_POLL_MS = 500;
   const VIDEO_POLL_TIMEOUT_MS = 30000;
 
   const state = {
     enabled: true,
+    hideAds: true,
     isAd: false,
     video: null,
     observer: null,
@@ -64,6 +70,25 @@
       });
     } catch (_) {
       // 확장 프로그램 리로드 중 컨텍스트 무효화. 무시.
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 디스플레이 배너 광고 숨김
+  // ---------------------------------------------------------------------------
+  function applyHideAds() {
+    let styleEl = document.getElementById(HIDE_STYLE_ID);
+    if (state.hideAds) {
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = HIDE_STYLE_ID;
+        styleEl.textContent = `${AD_BANNER_SELECTOR} { display: none !important; }`;
+        (document.head || document.documentElement).appendChild(styleEl);
+        log('배너 광고 숨김 활성화');
+      }
+    } else if (styleEl) {
+      styleEl.remove();
+      log('배너 광고 숨김 해제');
     }
   }
 
@@ -134,15 +159,23 @@
   // Settings + messaging
   // ---------------------------------------------------------------------------
   function loadSettings() {
-    chrome.storage.sync.get({ enabled: true }, (cfg) => {
+    chrome.storage.sync.get({ enabled: true, hideAds: true }, (cfg) => {
       state.enabled = !!cfg.enabled;
+      state.hideAds = !!cfg.hideAds;
+      applyHideAds();
     });
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== 'sync' || !changes.enabled) return;
-      state.enabled = !!changes.enabled.newValue;
-      log('사용 설정 변경됨:', state.enabled);
-      // 광고 중에 켜고 끄면 즉시 음소거/해제를 반영한다.
-      if (state.isAd) setMuted(state.enabled);
+      if (area !== 'sync') return;
+      if (changes.enabled) {
+        state.enabled = !!changes.enabled.newValue;
+        log('사용 설정 변경됨:', state.enabled);
+        // 광고 중에 켜고 끄면 즉시 음소거/해제를 반영한다.
+        if (state.isAd) setMuted(state.enabled);
+      }
+      if (changes.hideAds) {
+        state.hideAds = !!changes.hideAds.newValue;
+        applyHideAds();
+      }
     });
   }
 

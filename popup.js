@@ -2,6 +2,7 @@
   'use strict';
 
   const enabledInput = document.getElementById('enabled');
+  const hideAdsInput = document.getElementById('hideAds');
   const statusEl = document.getElementById('status');
   const indicatorEl = document.getElementById('indicator');
   const indicatorIconEl = document.getElementById('indicator-icon');
@@ -23,12 +24,17 @@
     }
   }
 
-  chrome.storage.sync.get({ enabled: true }, (cfg) => {
+  chrome.storage.sync.get({ enabled: true, hideAds: true }, (cfg) => {
     enabledInput.checked = !!cfg.enabled;
+    hideAdsInput.checked = !!cfg.hideAds;
   });
 
   enabledInput.addEventListener('change', () => {
     chrome.storage.sync.set({ enabled: enabledInput.checked });
+  });
+
+  hideAdsInput.addEventListener('change', () => {
+    chrome.storage.sync.set({ hideAds: hideAdsInput.checked });
   });
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

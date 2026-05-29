@@ -18,3 +18,54 @@ function injectIfBroadcast(details) {
 
 chrome.webNavigation.onHistoryStateUpdated.addListener(injectIfBroadcast);
 chrome.webNavigation.onCommitted.addListener(injectIfBroadcast);
+
+// 탭 단위 음소거. content script 는 chrome.tabs 에 접근할 수 없어서 mute/unmute
+// 요청을 여기로 보낸다. 비디오 엘리먼트의 .muted 대신 브라우저 레벨 탭 음소거를
+// 쓰는 이유는, TVING 플레이어가 광고용 <video> 를 갈아끼우거나 .muted 를 되돌려도
+// 페이지가 무력화할 수 없기 때문이다.
+//
+// 광고 시작 전의 음소거 상태를 chrome.storage.session 에 탭별로 저장해 두고,
+// 광고가 끝나면 그 상태로 되돌린다(service worker 가 중간에 죽어도 살아남도록).
+async function muteTab(tabId) {
+  try {
+    const key = String(tabId);
+    const stored = await chrome.storage.session.get(key);
+    // 광고 진입 시 한 번만 이전 상태를 기록한다. 이미 기록돼 있으면(=이미 음소거됨)
+    // 덮어쓰지 않아 복원값이 'true' 로 오염되는 것을 막는다.
+    if (!(key in stored)) {
+      const tab = await chrome.tabs.get(tabId);
+      const wasMuted = !!(tab.mutedInfo && tab.mutedInfo.muted);
+      await chrome.storage.session.set({ [key]: wasMuted });
+    }
+    await chrome.tabs.update(tabId, { muted: true });
+  } catch (_) {
+    // 탭이 닫혔거나 접근 불가. 정상 케이스로 무시.
+  }
+}
+
+async function restoreTab(tabId) {
+  try {
+    const key = String(tabId);
+    const stored = await chrome.storage.session.get(key);
+    const prev = (key in stored) ? !!stored[key] : false;
+    await chrome.storage.session.remove(key);
+    await chrome.tabs.update(tabId, { muted: prev });
+  } catch (_) {
+    // 탭이 닫힘 등. 무시.
+  }
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  const tabId = sender.tab && sender.tab.id;
+  if (typeof tabId === 'number' && msg) {
+    if (msg.type === 'mute') muteTab(tabId);
+    else if (msg.type === 'unmute') restoreTab(tabId);
+  }
+  sendResponse({ ok: true });
+  return false;
+});
+
+// 탭이 닫히면 남은 복원 상태를 정리.
+chrome.tabs.onRemoved.addListener((tabId) => {
+  chrome.storage.session.remove(String(tabId)).catch(() => {});
+});

@@ -18,7 +18,6 @@
   const state = {
     enabled: true,
     isAd: false,
-    prevMuted: null,
     video: null,
     observer: null,
     debounceTimer: null,
@@ -54,32 +53,38 @@
   // ---------------------------------------------------------------------------
   // Mute control
   // ---------------------------------------------------------------------------
+  // 탭 자체를 음소거한다. content script 에서는 chrome.tabs 를 직접 쓸 수 없어
+  // background service worker 에 mute/unmute 를 요청한다. 비디오 엘리먼트의
+  // .muted 를 만지는 방식은 TVING 플레이어가 광고용 <video> 를 갈아끼우거나
+  // .muted 를 되돌려 버리면 무력화되기 때문에, 브라우저 레벨 탭 음소거를 쓴다.
+  function setMuted(muted) {
+    try {
+      chrome.runtime.sendMessage({ type: muted ? 'mute' : 'unmute' }, () => {
+        void chrome.runtime.lastError; // worker 깨우는 중/컨텍스트 소멸 등 무시
+      });
+    } catch (_) {
+      // 확장 프로그램 리로드 중 컨텍스트 무효화. 무시.
+    }
+  }
+
   function onAdStart() {
-    if (!state.video || !state.enabled) return;
-    state.prevMuted = state.video.muted;
-    state.video.muted = true;
-    log('광고 감지 — 음소거 (이전 음소거 상태:', state.prevMuted, ')');
+    if (!state.enabled) return;
+    setMuted(true);
+    log('광고 감지 — 탭 음소거 요청');
   }
 
   function onAdEnd() {
-    if (!state.video) return;
-    if (!state.enabled) {
-      state.prevMuted = null;
-      return;
-    }
-    if (state.prevMuted !== null) {
-      state.video.muted = state.prevMuted;
-      log('광고 종료 — 음소거 상태 복원:', state.prevMuted);
-    }
-    state.prevMuted = null;
+    if (!state.enabled) return;
+    setMuted(false);
+    log('광고 종료 — 탭 음소거 해제 요청');
   }
 
   function evaluate() {
-    // SPA 라우팅으로 <video> 가 갈렸을 수도 있어서 매번 다시 확인.
+    // <video> 는 음소거에는 더 이상 쓰지 않지만, 팝업의 "플레이어 대기 중"
+    // 상태 표시를 위해 현재 video 엘리먼트를 계속 추적한다.
     const currentVideo = document.querySelector('video');
     if (currentVideo && currentVideo !== state.video) {
       state.video = currentVideo;
-      state.prevMuted = null;
     }
 
     const nowAd = isAdNow();
@@ -136,7 +141,8 @@
       if (area !== 'sync' || !changes.enabled) return;
       state.enabled = !!changes.enabled.newValue;
       log('사용 설정 변경됨:', state.enabled);
-      if (!state.enabled) state.prevMuted = null;
+      // 광고 중에 켜고 끄면 즉시 음소거/해제를 반영한다.
+      if (state.isAd) setMuted(state.enabled);
     });
   }
 

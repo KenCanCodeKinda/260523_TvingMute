@@ -6,10 +6,15 @@
   if (window.__TVING_MUTE_LOADED) return;
   window.__TVING_MUTE_LOADED = true;
 
-  // The TVING player renders a top-right "광고 정보 더 보기" button only
-  // during ad breaks. Presence of this button is the ad signal; absence
-  // means the broadcast is playing.
-  const AD_MARKER_TEXT = '광고 정보 더 보기';
+  // 광고 구간에만 플레이어 위에 "광고 정보 더보기" 링크 버튼이 뜬다. 이 버튼의
+  // 존재가 광고 신호이고, 사라지면 경기 재생 중이다. 1차로는 버튼의 CSS Module
+  // 클래스(PcAdvertisementLinkButton_advertisementLinkButton__해시)를 부분 매칭해
+  // 문구가 바뀌어도 견디게 하고, 2차로 버튼 텍스트를 공백 무시로 비교한다.
+  const AD_BUTTON_SELECTOR = '[class*="advertisementLinkButton" i]';
+  const AD_MARKER_TEXT = '광고 정보 더보기';
+  // 공백 유무가 빌드마다 달라질 수 있어("더보기" vs "더 보기") 공백을 완전히
+  // 제거하고 비교한다.
+  const AD_MARKER_KEY = AD_MARKER_TEXT.replace(/\s+/g, '');
 
   // 플레이어 아래에 붙는 디스플레이 배너 광고. TVING 이 SPA 재렌더링으로 다시
   // 끼워 넣어도 항상 가려지도록, 엘리먼트를 지우는 대신 <style> 로 숨긴다.
@@ -32,15 +37,21 @@
   // ---------------------------------------------------------------------------
   // Detection
   // ---------------------------------------------------------------------------
-  function normalize(text) {
-    return (text || '').replace(/\s+/g, ' ').trim();
+  // 공백을 전부 제거한다. "광고 정보 더보기" / "광고 정보 더 보기" 처럼 띄어쓰기가
+  // 달라도 같은 문자열로 보이게 한다.
+  function squash(text) {
+    return (text || '').replace(/\s+/g, '');
   }
 
   function isAdNow() {
-    const candidates = document.querySelectorAll('button, a, span');
-    for (const el of candidates) {
+    // 1) 클래스 기반 — 가장 견고. 광고 링크 버튼이 보이면 광고 구간이다.
+    for (const el of document.querySelectorAll(AD_BUTTON_SELECTOR)) {
+      if (isVisible(el)) return true;
+    }
+    // 2) 텍스트 기반 폴백 — 공백 무시 비교.
+    for (const el of document.querySelectorAll('button, a, span')) {
       if (el.childElementCount > 0) continue;
-      if (normalize(el.textContent).includes(AD_MARKER_TEXT) && isVisible(el)) {
+      if (squash(el.textContent).includes(AD_MARKER_KEY) && isVisible(el)) {
         return true;
       }
     }

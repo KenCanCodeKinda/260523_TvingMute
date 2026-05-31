@@ -10,11 +10,14 @@
 //   * 플레이어가 cross-origin iframe 안에 있으면, Console 상단의 프레임 선택
 //     드롭다운에서 그 iframe 컨텍스트로 바꾼 뒤 다시 실행해야 안이 보인다.
 (() => {
-  const MARKER = '광고 정보 더 보기';
+  const MARKER = '광고 정보 더보기';
+  const MARKER_KEY = MARKER.replace(/\s+/g, '');
+  const AD_BUTTON_SELECTOR = '[class*="advertisementLinkButton" i]';
   const lines = [];
   const out = (s = '') => lines.push(s);
 
   const norm = (t) => (t || '').replace(/\s+/g, ' ').trim();
+  const squash = (t) => (t || '').replace(/\s+/g, '');
   const visible = (el) => {
     if (!el || !el.getBoundingClientRect) return false;
     const r = el.getBoundingClientRect();
@@ -65,7 +68,22 @@
   if (!vc) out('(video 없음 — cross-origin iframe 안에 있을 수 있음)');
   out('');
 
-  out('--- marker check: "' + MARKER + '" ---');
+  // 클래스 기반 신호 (content_script.js 의 1차 감지와 동일).
+  out('--- ad button class check: "' + AD_BUTTON_SELECTOR + '" ---');
+  let classMatches = 0;
+  let classVisible = 0;
+  roots.forEach((root) => {
+    root.querySelectorAll(AD_BUTTON_SELECTOR).forEach((el) => {
+      classMatches++;
+      const vis = visible(el);
+      if (vis) classVisible++;
+      out(`  <${el.tagName.toLowerCase()}> class="${el.className}" visible=${vis} text="${norm(el.textContent).slice(0, 40)}"`);
+    });
+  });
+  out(`class matches: ${classMatches} (visible: ${classVisible})`);
+  out('');
+
+  out('--- marker check: "' + MARKER + '" (공백 무시) ---');
   let found = false;
   const labels = new Map();
   roots.forEach((root) => {
@@ -73,7 +91,7 @@
       if (el.childElementCount > 0) return;
       const t = norm(el.textContent);
       if (!t || t.length > 40 || !visible(el)) return;
-      if (t.includes(MARKER)) found = true;
+      if (squash(t).includes(MARKER_KEY)) found = true;
       labels.set(t, (labels.get(t) || 0) + 1);
     });
   });
